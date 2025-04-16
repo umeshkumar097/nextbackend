@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  password  String
+  role      String
+  createdAt DateTime @default(now())
+
+  speakerProfile  SpeakerProfile?  @relation("UserToSpeakerProfile")
+  businessProfile BusinessProfile? @relation("UserToBusinessProfile")
+}
+
+model SpeakerProfile {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String    @unique @db.ObjectId
+  user      User      @relation("UserToSpeakerProfile", fields: [userId], references: [id])
+  bio       String
+  name      String
+  rating     Float?
+  kycStatus String    @default("PENDING")
+  bookings  Booking[]
+}
+
+model BusinessProfile {
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String    @unique @db.ObjectId
+  user     User      @relation("UserToBusinessProfile", fields: [userId], references: [id])
+  company  String
+  bookings Booking[]
+}
+
+model Booking {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  speakerId    String   @db.ObjectId
+  businessId   String   @db.ObjectId
+  eventDetails String
+  eventDate    DateTime
+  status       String
+  createdAt    DateTime @default(now())
+
+  speakerProfile  SpeakerProfile  @relation(fields: [speakerId], references: [id])
+  businessProfile BusinessProfile @relation(fields: [businessId], references: [id])
+  contract        Contract?
+  payment         Payment?
+  chatRoom        ChatRoom?
+}
+
+model Contract {
+  id           String  @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId    String  @unique @db.ObjectId
+  booking      Booking @relation(fields: [bookingId], references: [id])
+  speakerName  String
+  businessName String
+  contractUrl  String
+  createdAt    DateTime @default(now())
+}
+
+model Payment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId String   @unique @db.ObjectId
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  amount    Float
+  status    String
+  createdAt DateTime @default(now())
+}
+
+model ChatRoom {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  bookingId String    @unique @db.ObjectId
+  booking   Booking   @relation(fields: [bookingId], references: [id])
+  messages  Message[]
+}
+
+model Message {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  chatRoomId String   @db.ObjectId
+  senderId   String
+  content    String
+  createdAt  DateTime @default(now())
+  timestamp  DateTime @default(now())
+  chatRoom   ChatRoom @relation(fields: [chatRoomId], references: [id])
+}
